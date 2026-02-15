@@ -1,0 +1,59 @@
+# Model weights (too large for GitHub)
+*.pth
+*.pt
+*.h5
+*.onnx
+*.bin
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+*.egg
+
+# Node
+node_modules/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads (user content)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+nohup.out
+
+# Test / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Torch cache
+.cache/
