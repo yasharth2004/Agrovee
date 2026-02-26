@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Camera,
@@ -17,6 +17,12 @@ import {
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
+  MessageCircle,
+  Send,
+  Bot,
+  User,
+  Minimize2,
+  Maximize2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { diagnosisAPI, type DiagnosisResponse } from "@/lib/api"
+import { diagnosisAPI, chatAPI, type DiagnosisResponse } from "@/lib/api"
 
 /** Format disease names: "Apple___Apple_Scab" → "Apple Scab" */
 function formatDisease(name: string | null | undefined): string {
@@ -79,6 +85,75 @@ export default function DiagnosePage() {
   const [error, setError] = useState("")
   const [showDetails, setShowDetails] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Chat widget state
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([])
+  const [chatInput, setChatInput] = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatSessionId, setChatSessionId] = useState<number | null>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [chatMessages, chatLoading])
+
+  /** Build context object from current diagnosis result */
+  function buildDiagnosisContext() {
+    if (!result) return {}
+    return {
+      crop: result.crop_type || "",
+      disease: result.predicted_disease || "",
+      confidence: result.confidence_score,
+      risk: result.risk_assessment || "",
+      weather: result.weather_data
+        ? `${result.weather_data.temperature?.toFixed(0)}°C, ${result.weather_data.humidity?.toFixed(0)}% humidity, ${result.weather_data.wind_speed?.toFixed(1)} m/s wind`
+        : "",
+      treatments:
+        result.recommendations?.treatments
+          ?.map((t: any) => t.name || t.type || "")
+          .filter(Boolean)
+          .join(", ") || "",
+      prevention:
+        result.recommendations?.prevention?.join("; ") || "",
+    }
+  }
+
+  /** Send a chat message with diagnosis context */
+  async function handleChatSend() {
+    const msg = chatInput.trim()
+    if (!msg || chatLoading) return
+
+    setChatInput("")
+    setChatMessages((prev) => [...prev, { role: "user", content: msg }])
+    setChatLoading(true)
+
+    try {
+      const context = buildDiagnosisContext()
+      const res = await chatAPI.sendMessage(msg, chatSessionId || undefined, context)
+      const data = res.data
+      if (data.session_id && !chatSessionId) {
+        setChatSessionId(data.session_id)
+      }
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.content },
+      ])
+    } catch {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, I couldn't process your question. Please try again.",
+        },
+      ])
+    } finally {
+      setChatLoading(false)
+    }
+  }
 
   const handleFileSelect = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -135,6 +210,11 @@ export default function DiagnosePage() {
     setLocation("")
     setSeason("")
     setShowDetails(false)
+    // Reset chat
+    setChatOpen(false)
+    setChatMessages([])
+    setChatInput("")
+    setChatSessionId(null)
   }
 
   const riskColor = (risk: string | null) => {
@@ -560,6 +640,149 @@ export default function DiagnosePage() {
               <Camera className="h-4 w-4" />
               Analyze Another Image
             </Button>
+
+            {/* ── Diagnosis Chatbot Widget ── */}
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+              {/* Chat header - always visible */}
+              <button
+                onClick={() => setChatOpen(!chatOpen)}
+                className="flex w-full items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                    <MessageCircle className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Ask Agrovee AI
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Ask follow-up questions about this diagnosis
+                    </p>
+                  </div>
+                </div>
+                {chatOpen ? (
+                  <Minimize2 className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Maximize2 className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {chatOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="border-t border-border/40">
+                      {/* Messages area */}
+                      <div className="h-72 overflow-y-auto p-4 space-y-3">
+                        {chatMessages.length === 0 && (
+                          <div className="flex h-full flex-col items-center justify-center text-center">
+                            <Bot className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                            <p className="text-sm font-medium text-muted-foreground">
+                              Ask anything about your diagnosis
+                            </p>
+                            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                              {[
+                                `How do I treat ${formatDisease(result.predicted_disease)}?`,
+                                "What caused this disease?",
+                                "Is my crop salvageable?",
+                              ].map((q) => (
+                                <button
+                                  key={q}
+                                  onClick={() => {
+                                    setChatInput(q)
+                                  }}
+                                  className="rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                >
+                                  {q}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {chatMessages.map((msg, i) => (
+                          <div
+                            key={i}
+                            className={`flex gap-2 ${
+                              msg.role === "user" ? "justify-end" : "justify-start"
+                            }`}
+                          >
+                            {msg.role === "assistant" && (
+                              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <Bot className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                            )}
+                            <div
+                              className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                                msg.role === "user"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-foreground"
+                              }`}
+                            >
+                              {msg.content}
+                            </div>
+                            {msg.role === "user" && (
+                              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {chatLoading && (
+                          <div className="flex gap-2">
+                            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                              <Bot className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                            <div className="rounded-2xl bg-muted px-4 py-2.5">
+                              <div className="flex gap-1">
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <div ref={chatEndRef} />
+                      </div>
+
+                      {/* Chat input */}
+                      <div className="border-t border-border/40 p-3">
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            handleChatSend()
+                          }}
+                          className="flex gap-2"
+                        >
+                          <Input
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Ask about this diagnosis..."
+                            className="h-9 flex-1 text-sm"
+                            disabled={chatLoading}
+                          />
+                          <Button
+                            type="submit"
+                            size="sm"
+                            className="h-9 w-9 p-0"
+                            disabled={!chatInput.trim() || chatLoading}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

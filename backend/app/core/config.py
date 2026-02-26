@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     DEVICE: str = "cuda"  # or "cpu"
     
     # Weather API (OpenWeatherMap)
-    WEATHER_API_KEY: str = "your-openweathermap-api-key"
+    WEATHER_API_KEY: str = "fa64060dde08540c194cff5e6c86fd5f"
     WEATHER_API_URL: str = "https://api.openweathermap.org/data/2.5"
     
     # HuggingFace (for RAG chatbot)

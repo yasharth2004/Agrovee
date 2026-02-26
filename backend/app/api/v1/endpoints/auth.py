@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.user import UserRegister, UserLogin, Token, UserResponse
+from app.schemas.user import UserRegister, UserLogin, Token, UserResponse, PasswordResetRequest, PasswordResetConfirm
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -18,8 +18,14 @@ from app.core.security import (
     get_current_user
 )
 from app.core.config import settings
+import secrets
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# In-memory reset token store (production: use Redis/DB)
+_reset_tokens: dict[str, tuple[str, datetime]] = {}
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -146,3 +152,68 @@ async def refresh_token(current_user: User = Depends(get_current_user), db: Sess
         "token_type": "bearer",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
+
+
+@router.post("/forgot-password")
+async def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    """
+    Request a password reset token.
+    In production, this would send an email. Here we return the token directly.
+    """
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        # Return success even if user not found (prevents email enumeration)
+        return {"message": "If that email exists, a reset link has been sent."}
+
+    # Generate a 6-digit reset code
+    reset_code = f"{secrets.randbelow(1000000):06d}"
+    _reset_tokens[reset_code] = (user.email, datetime.utcnow() + timedelta(minutes=15))
+
+    logger.info(f"Password reset code for {user.email}: {reset_code}")
+
+    return {
+        "message": "If that email exists, a reset link has been sent.",
+        "reset_code": reset_code,  # In production, send via email instead
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(data: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """
+    Reset password using a reset token/code.
+    """
+    if data.new_password != data.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match"
+        )
+
+    token_data = _reset_tokens.get(data.token)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset code"
+        )
+
+    email, expiry = token_data
+    if datetime.utcnow() > expiry:
+        _reset_tokens.pop(data.token, None)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reset code has expired"
+        )
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found"
+        )
+
+    user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+
+    # Invalidate the used token
+    _reset_tokens.pop(data.token, None)
+
+    return {"message": "Password has been reset successfully"}

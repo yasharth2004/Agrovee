@@ -65,6 +65,19 @@ class PasswordChange(BaseModel):
     confirm_password: str
 
 
+# Password Reset
+class PasswordResetRequest(BaseModel):
+    """Request password reset token"""
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    """Confirm password reset with token"""
+    token: str
+    new_password: str = Field(..., min_length=8)
+    confirm_password: str
+
+
 # User Response (Public)
 class UserResponse(UserBase):
     """User response (public information)"""

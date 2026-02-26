@@ -1,21 +1,17 @@
-# Model weights (too large for GitHub)
-*.pth
-*.pt
-*.h5
-*.onnx
-*.bin
+# OS
+.DS_Store
+Thumbs.db
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.egg-info/
+*.egg
 dist/
 build/
 venv/
 .venv/
-env/
-*.egg
+*.so
 
 # Node
 node_modules/
@@ -27,33 +23,32 @@ out/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment
+# Env
 .env
 .env.local
-.env.*.local
+.env.production
 
 # Database
 *.db
-*.sqlite3
-
-# Uploads (user content)
-backend/uploads/*
-!backend/uploads/.gitkeep
 
 # Logs
 *.log
-nohup.out
+server.log
 
-# Test / Coverage
+# Model weights (use Git LFS for these)
+*.pth
+*.pt
+*.onnx
+
+# Coverage
 .coverage
 htmlcov/
 .pytest_cache/
 
-# Torch cache
-.cache/
+# Build artifacts
+agri-vision-talk-frontend-build*/
+
+# Images uploaded by users
+backend/uploads/*
+!backend/uploads/.gitkeep

@@ -1,6 +1,7 @@
 """
 RAG Chatbot Service
 Retrieval-Augmented Generation for agricultural Q&A
+Uses Ollama (phi model) for LLM generation + FAISS for retrieval
 """
 
 import numpy as np
@@ -8,9 +9,14 @@ from typing import List, Dict, Optional
 import logging
 import json
 import os
+import httpx
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# Ollama configuration
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi")
 
 # Try to import AI dependencies
 try:
@@ -25,7 +31,7 @@ except ImportError:
 class RAGChatbotService:
     """
     RAG-based chatbot for agricultural queries
-    Uses FAISS for retrieval and HuggingFace for generation
+    Uses FAISS for retrieval and Ollama (phi) for generation
     """
     
     def __init__(self):
@@ -33,8 +39,10 @@ class RAGChatbotService:
         self.index = None
         self.knowledge_base = []
         self.knowledge_embeddings = None
+        self.ollama_available = False
         self._load_knowledge_base()
         self._initialize_embeddings()
+        self._check_ollama()
     
     def _load_knowledge_base(self):
         """Load agricultural knowledge base"""
@@ -126,6 +134,24 @@ class RAGChatbotService:
             logger.error(f"Error initializing embeddings: {e}")
             self.embedding_model = None
             self.index = None
+
+    def _check_ollama(self):
+        """Check if Ollama is available and the model is loaded"""
+        try:
+            resp = httpx.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5.0)
+            if resp.status_code == 200:
+                models = [m["name"].split(":")[0] for m in resp.json().get("models", [])]
+                model_name = OLLAMA_MODEL.split(":")[0]
+                if model_name in models:
+                    self.ollama_available = True
+                    logger.info(f"✓ Ollama connected — using model '{OLLAMA_MODEL}'")
+                else:
+                    logger.warning(f"Ollama running but model '{OLLAMA_MODEL}' not found. Available: {models}")
+            else:
+                logger.warning("Ollama API responded with non-200 status")
+        except Exception as e:
+            logger.warning(f"Ollama not reachable at {OLLAMA_BASE_URL}: {e}")
+            self.ollama_available = False
     
     def chat(self, user_message: str, context: Optional[Dict] = None) -> Dict:
         """
@@ -219,57 +245,220 @@ class RAGChatbotService:
     
     def _generate_response(self, user_message: str, retrieved_docs: List[Dict], context: Optional[Dict]) -> str:
         """
-        Generate response based on retrieved documents
-        
-        In production, this would use an LLM (GPT, LLaMA, etc.)
-        For now, we use a template-based approach
+        Generate response using Ollama LLM with RAG context.
+        Falls back to template-based if Ollama is unavailable.
         """
-        # Check if query is directly answered by top document
+        # Build context string from retrieved docs (no source markers — model parrots them)
+        context_text = ""
+        for doc in retrieved_docs:
+            context_text += f"Q: {doc['question']}\nA: {doc['answer']}\n\n"
+
+        # Add user context if available
+        extra_context = ""
+        if context:
+            if "crop" in context and context["crop"]:
+                extra_context += f"The user is growing {context['crop']}. "
+            if "disease" in context and context["disease"]:
+                extra_context += f"The user's crop has been diagnosed with {context['disease']}. "
+            if "confidence" in context and context["confidence"]:
+                extra_context += f"Diagnosis confidence: {context['confidence']:.1f}%. "
+            if "risk" in context and context["risk"]:
+                extra_context += f"Risk level: {context['risk']}. "
+            if "weather" in context and context["weather"]:
+                extra_context += f"Current weather: {context['weather']}. "
+            if "treatments" in context and context["treatments"]:
+                extra_context += f"Recommended treatments: {context['treatments']}. "
+            if "prevention" in context and context["prevention"]:
+                extra_context += f"Prevention tips: {context['prevention']}. "
+
+        # Try Ollama first
+        if self.ollama_available:
+            try:
+                return self._call_ollama(user_message, context_text, extra_context)
+            except Exception as e:
+                logger.error(f"Ollama generation failed, falling back to template: {e}")
+
+        # Template-based fallback
+        return self._template_response(user_message, retrieved_docs, context)
+
+    def _call_ollama(self, user_message: str, context_text: str, extra_context: str) -> str:
+        """Call Ollama API to generate a response"""
+        system_prompt = (
+            "You are Agrovee AI, a senior agronomist and plant pathologist with 20 years of field experience. "
+            "You work inside the Agrovee crop-health platform. You speak like a knowledgeable farming expert "
+            "who has personally dealt with every common crop disease.\n\n"
+            "YOUR VOICE:\n"
+            "- Confident and direct. You KNOW the answer — never hedge with 'I suggest you consult someone else'.\n"
+            "- Practical: give exact steps a farmer can do TODAY.\n"
+            "- Use bullet points for treatment steps.\n"
+            "- Keep answers 80-120 words. Be dense with useful info, no filler.\n\n"
+            "STRICT RULES:\n"
+            "1. NEVER say 'As an AI', 'As an Agrovee assistant', 'As a language model', or similar. You are a farming expert, period.\n"
+            "2. NEVER mention sources, references, citations, or '[Source]'. Just state facts directly.\n"
+            "3. NEVER say 'consult your local agronomist' or 'consult an expert' — YOU are the expert.\n"
+            "4. NEVER generate fake conversations, follow-up questions you answer yourself, puzzles, or scenarios.\n"
+            "5. Give ONE direct answer, then STOP.\n"
+            "6. Use emoji sparingly: 🌱 🌾 💧 🐛 ✅\n"
+        )
+
+        user_prompt = f"""Agricultural knowledge:
+{context_text}
+{extra_context}
+Farmer asks: {user_message}
+
+Answer as a confident farming expert. Be specific and actionable. No source references. One answer, then stop."""
+
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": user_prompt,
+            "system": system_prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.5,
+                "top_p": 0.8,
+                "num_predict": 200,
+                "repeat_penalty": 1.3,
+                "stop": ["\nUser:", "\nuser:", "\nAssistant:", "\nassistant:", "\nFarmer:", "\nfarmer:", "\nImagine", "\nQuestion:", "\nConsider", "\nHint:", "\nExercise", "\nNote:", "\nScenario", "\nPuzzle", "```", "\n\n\n"],
+            }
+        }
+
+        logger.info(f"Sending request to Ollama ({OLLAMA_MODEL})...")
+        resp = httpx.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json=payload,
+            timeout=120.0  # phi can take a moment on CPU
+        )
+        resp.raise_for_status()
+        result = resp.json()
+        answer = result.get("response", "").strip()
+
+        if not answer:
+            raise ValueError("Ollama returned empty response")
+
+        # Post-process: trim any off-topic rambling the model may append
+        answer = self._clean_response(answer)
+
+        logger.info(f"Ollama response received ({len(answer)} chars)")
+        return answer
+
+    @staticmethod
+    def _clean_response(text: str) -> str:
+        """Strip off-topic content that phi sometimes appends."""
+        import re
+
+        # Remove [Source N] / [source N] references the model may parrot
+        text = re.sub(r'\[(?:[Ss]ource\s*\d+)\]', '', text)
+        # Remove "from reputable sources" type filler
+        text = re.sub(r',?\s*(?:from|based on)\s+(?:reputable|reliable|trusted)\s+sources?[^.]*\.?', '.', text, flags=re.IGNORECASE)
+        # Remove "As an Agrovee assistant/AI" openings
+        text = re.sub(r'^(?:Hi!?\s*)?As an? Agrovee (?:assistant|AI)[,.]?\s*', '', text, flags=re.IGNORECASE)
+        # Remove "consult your local agronomist" type hedging
+        text = re.sub(r'I (?:suggest|recommend|advise) (?:you )?(?:to )?consult (?:your )?(?:local )?(?:agronomist|expert|specialist)[^.]*\.?\s*', '', text, flags=re.IGNORECASE)
+
+        # Cut at any fake continuation pattern
+        cut_markers = [
+            "\nUser:", "\nuser:", "\nAssistant:", "\nassistant:",
+            "\nFarmer:", "\nfarmer:", "\nHuman:", "\nhuman:",
+            "\nImagine ", "\nQuestion:", "\nConsider a",
+            "\nYou are a ", "\nNote:", "\nExercise",
+            "\nHint:", "\nFirst, identify", "\nScenario",
+            "\nAs an AI", "\nAs an Agrovee", "\nHowever, due to",
+            "\nLet me ", "\nNow, ", "\nIn this scenario",
+            "\nAgrovee AI has", "\nPuzzle", "```",
+            "\n1. The farmer",
+        ]
+        for marker in cut_markers:
+            idx = text.find(marker)
+            if idx > 30:
+                text = text[:idx].rstrip()
+
+        # Line-level filtering
+        lines = text.split("\n")
+        clean_lines = []
+        for line in lines:
+            stripped = line.strip().lower()
+            if stripped.startswith("user:") or stripped.startswith("assistant:") or stripped.startswith("farmer:"):
+                break
+            if "user input from" in stripped or "farmer's question from" in stripped:
+                break
+            if "from agrovee's knowledge base" in stripped or "from his/her dashboard" in stripped:
+                break
+            clean_lines.append(line)
+
+        # Clean up double spaces / double periods from removals
+        result = "\n".join(clean_lines).strip()
+        result = re.sub(r'\s{2,}', ' ', result)
+        result = re.sub(r'\.{2,}', '.', result)
+        result = re.sub(r'\s*,\s*,', ',', result)
+        result = re.sub(r',\s*\.', '.', result)
+        return result.strip()
+
+    def _generate_fallback_response(self, user_message: str) -> str:
+        """Generate response when no relevant documents found — try Ollama first"""
+        if self.ollama_available:
+            try:
+                return self._call_ollama(
+                    user_message,
+                    context_text="No specific documents matched in the Agrovee knowledge base for this query. Use your general agricultural expertise to help.",
+                    extra_context=""
+                )
+            except Exception as e:
+                logger.error(f"Ollama fallback failed: {e}")
+
+        return self._static_fallback_response()
+
+    def _template_response(self, user_message: str, retrieved_docs: List[Dict], context: Optional[Dict]) -> str:
+        """Template-based response (used when Ollama is unavailable)"""
         if retrieved_docs and retrieved_docs[0]["score"] > 0.7:
             top_doc = retrieved_docs[0]
-            
-            # Format response
-            response = f"{top_doc['answer']}\n\n"
-            
-            # Add context-specific information
+            response = f"🌱 Great question! Here's what I know:\n\n{top_doc['answer']}\n"
+
             if context:
                 if "crop" in context:
-                    response += f"\n💡 This advice is particularly relevant for {context['crop']}."
+                    response += f"\n💡 Since you're growing **{context['crop']}**, this is especially relevant."
                 if "disease" in context:
-                    response += f"\n🔍 Related to your diagnosis: {context['disease']}"
-            
-            # Add related information from other docs
+                    response += f"\n🔍 This ties into your recent diagnosis of **{context['disease']}** — check the Dashboard for updated risk scores."
+
             if len(retrieved_docs) > 1:
-                response += "\n\n**Related information:**\n"
+                response += "\n\n📚 **You might also want to know:**\n"
                 for doc in retrieved_docs[1:]:
                     response += f"• {doc['question']}\n"
-            
+
+            response += "\nAnything else I can help with? 🌾"
             return response
-        
-        # Synthesize from multiple sources
-        response = "Based on agricultural best practices:\n\n"
-        
-        for i, doc in enumerate(retrieved_docs[:2], 1):
+
+        response = "🌱 Here's what Agrovee recommends based on best practices:\n\n"
+        for doc in retrieved_docs[:2]:
             response += f"{doc['answer']}\n\n"
-        
-        response += "\n💬 For specific conditions on your farm, consider consulting a local agricultural expert."
-        
+        response += "💡 **Tip:** Upload a leaf photo on the **Diagnose** page for a more precise AI analysis!\n"
+        response += "\nFeel free to ask me anything else! 🌾"
         return response
-    
-    def _generate_fallback_response(self, user_message: str) -> str:
-        """Generate fallback response when no relevant documents found"""
-        return """I don't have specific information about that in my knowledge base. However, here are some general guidelines:
-        
-1. For disease issues: Ensure proper plant spacing, good air circulation, and avoid overhead watering
-2. For growth problems: Check soil pH, ensure adequate nutrition, and maintain consistent watering
-3. For pest issues: Monitor regularly, use integrated pest management (IPM) practices
 
-For specific guidance, I recommend:
-- Consulting your local agricultural extension office
-- Sharing photos of the issue for better diagnosis
-- Getting soil testing done
+    def _static_fallback_response(self) -> str:
+        """Static fallback when no LLM and no retrieval results"""
+        return """👋 Hey there! I'm Agrovee AI — your smart farming companion.
 
-Is there something more specific I can help you with?"""
+I don't have a specific answer for that in my knowledge base yet, but here's what I'd suggest:
+
+🌿 **For plant health issues:**
+• Upload a leaf photo on the **Diagnose** page — I can identify 38 crop diseases from images!
+• Check your **Dashboard** for weather-adjusted disease risk scores.
+
+💧 **General crop tips:**
+• Ensure proper spacing and air circulation
+• Monitor soil moisture — overwatering is the #1 mistake
+• Keep an eye on pests early — prevention beats treatment
+
+🌤️ **Weather matters:**
+• Your Dashboard shows real-time weather data for your area
+• High humidity + warm temps = higher disease risk
+
+Try asking me something specific like:
+• "How do I treat powdery mildew?"
+• "What fertilizer should I use for tomatoes?"
+• "Signs of overwatering?"
+
+I'm here to help! 🌾"""
 
 
 # Global instance

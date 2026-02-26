@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 60000,  // 60s timeout (image uploads can be slow)
 })
 
 // Request interceptor - attach JWT token
@@ -83,6 +84,10 @@ export const authAPI = {
   me: () => api.get<User>("/auth/me"),
   logout: () => api.post("/auth/logout"),
   refresh: () => api.post<TokenResponse>("/auth/refresh"),
+  forgotPassword: (email: string) =>
+    api.post<{ message: string; reset_code?: string }>("/auth/forgot-password", { email }),
+  resetPassword: (token: string, new_password: string, confirm_password: string) =>
+    api.post<{ message: string }>("/auth/reset-password", { token, new_password, confirm_password }),
 }
 
 // ---- Diagnosis API ---- //

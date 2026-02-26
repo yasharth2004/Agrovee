@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { authAPI, type User, type LoginData, type RegisterData } from "@/lib/api"
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   const refreshUser = useCallback(async () => {
     try {
@@ -51,7 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const register = async (data: RegisterData) => {
-    await authAPI.register(data)
+    const res = await authAPI.register(data)
+    // Auto-login after registration
+    if (res.data) {
+      const loginRes = await authAPI.login({ email: data.email, password: data.password })
+      localStorage.setItem("access_token", loginRes.data.access_token)
+      localStorage.setItem("refresh_token", loginRes.data.refresh_token)
+      await refreshUser()
+    }
   }
 
   const logout = () => {
@@ -59,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("refresh_token")
     localStorage.removeItem("user")
     setUser(null)
-    window.location.href = "/"
+    router.push("/")
   }
 
   return (

@@ -13,9 +13,12 @@ import {
   LogOut,
   Menu,
   X,
+  Sun,
+  Moon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
+import { useTheme } from "next-themes"
 import { useState } from "react"
 
 const navItems = [
@@ -34,6 +37,12 @@ export default function DashboardLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { theme, setTheme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -186,12 +195,34 @@ export default function DashboardLayout({
 
       {/* Main content */}
       <div className="flex flex-1 flex-col">
-        {/* Mobile header */}
-        <header className="flex h-14 items-center gap-4 border-b border-border/60 px-4 lg:hidden">
-          <button onClick={() => setSidebarOpen(true)}>
+        {/* Top header — visible on all screen sizes */}
+        <header className="flex h-14 items-center gap-4 border-b border-border/60 px-4 lg:px-8">
+          {/* Mobile menu button */}
+          <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5 text-foreground" />
           </button>
-          <span className="font-heading text-sm font-bold">AgriVisionTalk</span>
+          <span className="flex-1 font-heading text-sm font-bold lg:hidden">AgriVisionTalk</span>
+          <span className="hidden flex-1 text-sm font-medium text-muted-foreground lg:block">
+            {navItems.find((item) => item.href === pathname)?.label || "Dashboard"}
+          </span>
+          {/* Dark / Light mode toggle */}
+          {mounted && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">
+                {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
+              </span>
+            </Button>
+          )}
         </header>
 
         {/* Page content */}

@@ -1,0 +1,16 @@
+{
+  "name": "AgriVisionTalk",
+  "short_name": "AgriVision",
+  "description": "AI-Powered Smart Farming Assistant — Crop Health Monitoring & Disease Detection",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
