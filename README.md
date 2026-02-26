@@ -1,6 +1,6 @@
-# 🌾 AgriVisionTalk — AI-Powered Smart Farming Assistant
+# 🌾 Agrovee — AI-Powered Smart Farming Assistant
 
-AgriVisionTalk is a full-stack multimodal AI platform for **crop health monitoring and disease detection**. Upload a photo of your crop, and the system identifies the crop type, detects diseases using a trained deep learning model, provides treatment recommendations, and offers an AI chatbot for farming advice.
+Agrovee is a full-stack multimodal AI platform for **crop health monitoring and disease detection**. Upload a photo of your crop, and the system identifies the crop type, detects diseases using a trained deep learning model, provides treatment recommendations, and offers an AI chatbot for farming advice.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green)
@@ -93,7 +93,7 @@ Frontend runs at **http://localhost:3000**
 ### 4. Default Admin Login
 
 ```
-Email:    admin@agrivision.com
+Email:    admin@agrovee.com
 Password: admin123
 ```
 

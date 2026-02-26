@@ -1,4 +1,4 @@
-# AgriVisionTalk Backend API
+# Agrovee Backend API
 
 FastAPI-based backend for multimodal AI crop health monitoring system.
 
@@ -70,11 +70,11 @@ brew install postgresql@14
 brew services start postgresql@14
 
 # Create database
-createdb agrivision_db
+createdb agrovee_db
 
 # Create user
-psql -d agrivision_db -c "CREATE USER agrivision WITH PASSWORD 'agrivision123';"
-psql -d agrivision_db -c "GRANT ALL PRIVILEGES ON DATABASE agrivision_db TO agrivision;"
+psql -d agrovee_db -c "CREATE USER agrovee WITH PASSWORD 'agrovee123';"
+psql -d agrovee_db -c "GRANT ALL PRIVILEGES ON DATABASE agrovee_db TO agrovee;"
 ```
 
 ### 4. Environment Configuration

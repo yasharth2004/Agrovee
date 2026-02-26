@@ -18,7 +18,7 @@ class TestHealthCheck:
         data = resp.json()
         assert data["status"] == "healthy"
         assert data["version"] == "1.0.0"
-        assert data["service"] == "AgriVisionTalk API"
+        assert data["service"] == "Agrovee API"
 
     def test_health_has_process_time_header(self, client: TestClient):
         """Response includes X-Process-Time header from middleware."""
@@ -34,6 +34,6 @@ class TestRootEndpoint:
         resp = client.get("/")
         assert resp.status_code == 200
         data = resp.json()
-        assert "AgriVisionTalk" in data["message"]
+        assert "Agrovee" in data["message"]
         assert "version" in data
         assert data["docs"] == "/api/docs"

@@ -1,4 +1,4 @@
-# Docker Compose for AgriVisionTalk Backend
+# Docker Compose for Agrovee Backend
 # Includes PostgreSQL, Redis, and Backend API
 
 version: '3.8'
@@ -7,27 +7,27 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:14-alpine
-    container_name: agrivision_db
+    container_name: agrovee_db
     environment:
-      POSTGRES_USER: agrivision
-      POSTGRES_PASSWORD: agrivision123
-      POSTGRES_DB: agrivision_db
+      POSTGRES_USER: agrovee
+      POSTGRES_PASSWORD: agrovee123
+      POSTGRES_DB: agrovee_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agrivision"]
+      test: ["CMD-SHELL", "pg_isready -U agrovee"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - agrivision_network
+      - agrovee_network
 
   # Redis Cache (optional)
   redis:
     image: redis:7-alpine
-    container_name: agrivision_redis
+    container_name: agrovee_redis
     ports:
       - "6379:6379"
     volumes:
@@ -38,18 +38,18 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - agrivision_network
+      - agrovee_network
 
   # FastAPI Backend
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: agrivision_backend
+    container_name: agrovee_backend
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://agrivision:agrivision123@postgres:5432/agrivision_db
+      - DATABASE_URL=postgresql://agrovee:agrovee123@postgres:5432/agrovee_db
       - REDIS_URL=redis://redis:6379/0
       - ENVIRONMENT=development
       - DEBUG=True
@@ -64,7 +64,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - agrivision_network
+      - agrovee_network
     command: >
       sh -c "
         python scripts/init_db.py &&
@@ -76,5 +76,5 @@ volumes:
   redis_data:
 
 networks:
-  agrivision_network:
+  agrovee_network:
     driver: bridge

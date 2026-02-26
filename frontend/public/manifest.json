@@ -1,6 +1,6 @@
 {
-  "name": "AgriVisionTalk",
-  "short_name": "AgriVision",
+  "name": "Agrovee",
+  "short_name": "Agrovee",
   "description": "AI-Powered Smart Farming Assistant — Crop Health Monitoring & Disease Detection",
   "start_url": "/",
   "display": "standalone",

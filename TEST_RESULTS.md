@@ -5,7 +5,7 @@
 ### 1. Server Status
 - ✅ **Server Running**: http://localhost:8000
 - ✅ **Database**: SQLite initialized with tables
--  **Admin User Created**: `admin@agrivision.com` / `admin123`
+-  **Admin User Created**: `admin@agrovee.com` / `admin123`
 
 ### 2. Working Endpoints
 
@@ -27,7 +27,7 @@ curl http://localhost:8000/health
 {
   "status": "healthy",
   "version": "1.0.0",
-  "service": "AgriVisionTalk API",
+  "service": "Agrovee API",
   "environment": "development"
 }
 ```
@@ -53,7 +53,7 @@ curl -X POST http://localhost:8000/api/v1/auth/register \
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@agrivision.com",
+    "email": "admin@agrovee.com",
     "password": "admin123"
   }'
 
@@ -93,7 +93,7 @@ http://localhost:8000/api/docs
 
 ## 📊 Database
 
-**Location**: `/Users/yasharthkesarwani/Downloads/Agrovee/backend/agrivision.db`
+**Location**: `/Users/yasharthkesarwani/Downloads/Agrovee/backend/agrovee.db`
 
 **Tables Created**:
 - ✅ `users` - User accounts
@@ -102,7 +102,7 @@ http://localhost:8000/api/docs
 - ✅ `chat_messages` - Individual messages
 
 **Default Admin**:
-- Email: `admin@agrivision.com`
+- Email: `admin@agrovee.com`
 - Password: `admin123`
 - ⚠️ **Change in production!**
 

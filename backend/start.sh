@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# AgriVisionTalk Backend Quick Start Script
+# Agrovee Backend Quick Start Script
 # This script sets up and runs the backend server
 
 set -e  # Exit on error
 
 echo "============================================================"
-echo "AgriVisionTalk Backend - Quick Start"
+echo "Agrovee Backend - Quick Start"
 echo "============================================================"
 echo ""
 
@@ -73,7 +73,7 @@ echo "API Documentation will be available at:"
 echo "  http://localhost:8000/api/docs"
 echo ""
 echo "Default Admin Credentials:"
-echo "  Email: admin@agrivision.com"
+echo "  Email: admin@agrovee.com"
 echo "  Password: admin123"
 echo "  ⚠️  CHANGE PASSWORD IN PRODUCTION!"
 echo ""

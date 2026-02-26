@@ -19,7 +19,7 @@ class TestRegister:
 
     def test_register_success(self, client: TestClient):
         payload = {
-            "email": "new@agrivision.com",
+            "email": "new@agrovee.com",
             "password": "SecurePass1!",
             "confirm_password": "SecurePass1!",
             "full_name": "New Farmer",
@@ -27,7 +27,7 @@ class TestRegister:
         resp = client.post("/api/v1/auth/register", json=payload)
         assert resp.status_code == 201
         data = resp.json()
-        assert data["email"] == "new@agrivision.com"
+        assert data["email"] == "new@agrovee.com"
         assert data["full_name"] == "New Farmer"
         assert "id" in data
         assert "hashed_password" not in data

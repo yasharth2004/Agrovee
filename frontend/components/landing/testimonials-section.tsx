@@ -10,7 +10,7 @@ const testimonials = [
     name: "Rajesh Patel",
     role: "Rice Farmer, Gujarat",
     content:
-      "AgriVisionTalk helped me detect leaf blight early and saved 40% of my rice crop. The AI recommendations were spot-on.",
+      "Agrovee helped me detect leaf blight early and saved 40% of my rice crop. The AI recommendations were spot-on.",
     rating: 5,
     initials: "RP",
   },
@@ -82,7 +82,7 @@ export function TestimonialsSection() {
             <span className="text-balance">Trusted by Farmers Worldwide</span>
           </h2>
           <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
-            See what our community of farmers has to say about AgriVisionTalk.
+            See what our community of farmers has to say about Agrovee.
           </p>
         </motion.div>
 

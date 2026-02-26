@@ -12,6 +12,7 @@ import {
   Bot,
   User as UserIcon,
   ChevronLeft,
+  Mic,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +22,7 @@ import {
   type ChatSession,
   type ChatSessionDetail,
 } from "@/lib/api"
+import { VoiceChatOverlay } from "@/components/voice-chat-overlay"
 
 export default function ChatPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -31,6 +33,56 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [voiceOpen, setVoiceOpen] = useState(false)
+
+  /** Send a voice message — used by the voice overlay */
+  async function handleVoiceSend(message: string): Promise<string> {
+    const content = message.trim()
+    // Add user message
+    const tempUserMsg: ChatMessage = {
+      id: Date.now(),
+      session_id: activeSession?.id || 0,
+      role: "user",
+      content,
+      sources: null,
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, tempUserMsg])
+
+    try {
+      const res = await chatAPI.sendMessage(content, activeSession?.id || undefined)
+      const assistantMsg = res.data
+      if (!activeSession) {
+        setActiveSession({
+          id: assistantMsg.session_id,
+          user_id: 0,
+          title: content.slice(0, 50),
+          is_active: true,
+          message_count: 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          messages: [],
+        })
+        fetchSessions()
+      }
+      setMessages((prev) => [...prev, assistantMsg])
+      return assistantMsg.content
+    } catch {
+      const errMsg = "Sorry, I encountered an error. Please try again."
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          session_id: activeSession?.id || 0,
+          role: "assistant",
+          content: errMsg,
+          sources: null,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      return errMsg
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -238,13 +290,20 @@ export default function ChatPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">
-                AgriVision AI Assistant
+                Agrovee AI Assistant
               </p>
               <p className="text-xs text-muted-foreground">
                 Agricultural knowledge powered by RAG
               </p>
             </div>
           </div>
+          <button
+            onClick={() => setVoiceOpen(true)}
+            className="ml-auto rounded-full p-2 text-primary hover:bg-primary/10 transition-colors"
+            title="Voice chat"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Messages */}
@@ -350,6 +409,16 @@ export default function ChatPage() {
               className="flex-1"
             />
             <Button
+              onClick={() => setVoiceOpen(true)}
+              disabled={isSending}
+              size="icon"
+              variant="outline"
+              className="flex-shrink-0"
+              title="Voice chat"
+            >
+              <Mic className="h-4 w-4" />
+            </Button>
+            <Button
               onClick={sendMessage}
               disabled={!input.trim() || isSending}
               size="icon"
@@ -364,6 +433,14 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* Voice Chat Overlay */}
+      <VoiceChatOverlay
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onSend={handleVoiceSend}
+        loading={isSending}
+      />
     </div>
   )
 }

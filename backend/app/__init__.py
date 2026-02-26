@@ -1,5 +1,5 @@
 """
-AgriVisionTalk Backend
+Agrovee Backend
 FastAPI-based multimodal AI system for crop health monitoring
 """
 

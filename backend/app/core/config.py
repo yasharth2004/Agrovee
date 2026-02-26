@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     """
     
     # Application
-    PROJECT_NAME: str = "AgriVisionTalk API"
+    PROJECT_NAME: str = "Agrovee API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     ]
     
     # Database
-    DATABASE_URL: str = "sqlite:///./agrivision.db"  # Use SQLite for local testing
+    DATABASE_URL: str = "sqlite:///./agrovee.db"  # Use SQLite for local testing
     DATABASE_ECHO: bool = False  # Set to True to log SQL queries
     
     # JWT Authentication

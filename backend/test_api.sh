@@ -1,9 +1,9 @@
 #!/bin/bash
-# Test AgriVisionTalk Backend API
+# Test Agrovee Backend API
 
 API="http://localhost:8000"
 echo "=========================================="
-echo "Testing AgriVisionTalk Backend API"
+echo "Testing Agrovee Backend API"
 echo "=========================================="
 echo ""
 
@@ -94,7 +94,7 @@ echo "✓ Test 10: Login as Admin"
 ADMIN_LOGIN=$(curl -s -X POST "$API/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@agrivision.com",
+    "email": "admin@agrovee.com",
     "password": "admin123"
   }')
 echo "$ADMIN_LOGIN" | python3 -m json.tool

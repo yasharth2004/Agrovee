@@ -12,7 +12,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.agrivisiontalk.com',
+        hostname: '*.agrovee.com',
       },
     ],
   },

@@ -1,10 +1,10 @@
-# Makefile for AgriVisionTalk Backend
+# Makefile for Agrovee Backend
 # Convenience commands for development and deployment
 
 .PHONY: help install setup run dev docker-up docker-down docker-logs clean test lint format
 
 help:
-	@echo "AgriVisionTalk Backend - Available Commands"
+	@echo "Agrovee Backend - Available Commands"
 	@echo "============================================"
 	@echo "  make install      - Install dependencies"
 	@echo "  make setup        - Complete setup (venv, deps, db)"

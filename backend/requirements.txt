@@ -1,6 +1,6 @@
 # ============================================================================
 # FastAPI Backend Dependencies
-# AgriVisionTalk - Multimodal AI for Smart Farming
+# Agrovee - Multimodal AI for Smart Farming
 # ============================================================================
 
 # Core Framework

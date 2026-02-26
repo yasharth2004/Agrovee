@@ -23,6 +23,7 @@ import {
   User,
   Minimize2,
   Maximize2,
+  Mic,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { diagnosisAPI, chatAPI, type DiagnosisResponse } from "@/lib/api"
+import { VoiceChatOverlay } from "@/components/voice-chat-overlay"
 
 /** Format disease names: "Apple___Apple_Scab" → "Apple Scab" */
 function formatDisease(name: string | null | undefined): string {
@@ -95,11 +97,31 @@ export default function DiagnosePage() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSessionId, setChatSessionId] = useState<number | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const [voiceOpen, setVoiceOpen] = useState(false)
 
   // Auto-scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [chatMessages, chatLoading])
+
+  /** Send a voice message — used by the voice overlay */
+  async function handleVoiceSend(message: string): Promise<string> {
+    // Add user message to chat history
+    setChatMessages((prev) => [...prev, { role: "user", content: message }])
+
+    const context = buildDiagnosisContext()
+    const res = await chatAPI.sendMessage(message, chatSessionId || undefined, context)
+    const data = res.data
+    if (data.session_id && !chatSessionId) {
+      setChatSessionId(data.session_id)
+    }
+    // Add assistant message to chat history
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: data.content },
+    ])
+    return data.content
+  }
 
   /** Build context object from current diagnosis result */
   function buildDiagnosisContext() {
@@ -661,11 +683,13 @@ export default function DiagnosePage() {
                     </p>
                   </div>
                 </div>
-                {chatOpen ? (
-                  <Minimize2 className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <Maximize2 className="h-4 w-4 text-muted-foreground" />
-                )}
+                <div className="flex items-center gap-2">
+                  {chatOpen ? (
+                    <Minimize2 className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
               </button>
 
               <AnimatePresence>
@@ -769,6 +793,17 @@ export default function DiagnosePage() {
                             disabled={chatLoading}
                           />
                           <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-9 w-9 p-0"
+                            onClick={() => setVoiceOpen(true)}
+                            disabled={chatLoading}
+                            title="Voice chat"
+                          >
+                            <Mic className="h-4 w-4" />
+                          </Button>
+                          <Button
                             type="submit"
                             size="sm"
                             className="h-9 w-9 p-0"
@@ -786,6 +821,14 @@ export default function DiagnosePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Voice Chat Overlay */}
+      <VoiceChatOverlay
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onSend={handleVoiceSend}
+        loading={chatLoading}
+      />
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 ## What We Built
 
-Successfully integrated **5 AI services** into the AgriVisionTalk backend:
+Successfully integrated **5 AI services** into the Agrovee backend:
 
 ### 1. Vision Model Service (`vision_model.py`)
 - ResNet50 disease detection (38 classes, 99.1% accuracy)
@@ -162,7 +162,7 @@ uvicorn app.main:app --reload --port 8000
 # Login first
 TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@agrivision.com","password":"admin123"}' | jq -r '.access_token')
+  -d '{"email":"admin@agrovee.com","password":"admin123"}' | jq -r '.access_token')
 
 # Upload image
 curl -X POST http://localhost:8000/api/v1/diagnosis/diagnose \
@@ -325,7 +325,7 @@ We've successfully built a production-ready multimodal AI backend that:
 - Has comprehensive error handling and logging
 - Is ready for frontend integration
 
-**The backend is now feature-complete for the AgriVisionTalk MVP!** 🎉
+**The backend is now feature-complete for the Agrovee MVP!** 🎉
 
 All services are designed to be:
 - **Modular**: Each service is independent

@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     Manages startup and shutdown events
     """
     # Startup
-    logger.info("🚀 Starting AgriVisionTalk API...")
+    logger.info("🚀 Starting Agrovee API...")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Database: {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else 'Local'}")
     
@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("👋 Shutting down AgriVisionTalk API...")
+    logger.info("👋 Shutting down Agrovee API...")
 
 
 # Initialize FastAPI application
@@ -107,7 +107,7 @@ async def health_check():
     return {
         "status": "healthy",
         "version": "1.0.0",
-        "service": "AgriVisionTalk API",
+        "service": "Agrovee API",
         "environment": settings.ENVIRONMENT
     }
 
@@ -120,7 +120,7 @@ async def root():
     Welcome message with API documentation links
     """
     return {
-        "message": "🌿 Welcome to AgriVisionTalk API",
+        "message": "🌿 Welcome to Agrovee API",
         "description": "Multimodal AI for Smart Farming",
         "version": "1.0.0",
         "docs": "/api/docs",

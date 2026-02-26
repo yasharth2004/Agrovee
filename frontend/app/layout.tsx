@@ -17,24 +17,24 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'AgriVisionTalk - AI-Powered Smart Farming Assistant',
+  title: 'Agrovee - AI-Powered Smart Farming Assistant',
   description:
-    'Monitor crop health, detect diseases, and get AI-powered farming advice with AgriVisionTalk.',
+    'Monitor crop health, detect diseases, and get AI-powered farming advice with Agrovee.',
   keywords: ['agriculture', 'crop health', 'disease detection', 'AI farming', 'smart agriculture', 'plant disease'],
-  authors: [{ name: 'AgriVisionTalk' }],
+  authors: [{ name: 'Agrovee' }],
   manifest: '/manifest.json',
   icons: {
     icon: '/icon.svg',
   },
   openGraph: {
-    title: 'AgriVisionTalk - AI-Powered Smart Farming Assistant',
+    title: 'Agrovee - AI-Powered Smart Farming Assistant',
     description: 'Upload crop images, detect diseases, get treatment recommendations, and chat with an AI farming assistant.',
-    siteName: 'AgriVisionTalk',
+    siteName: 'Agrovee',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AgriVisionTalk',
+    title: 'Agrovee',
     description: 'AI-Powered Crop Health Monitoring & Disease Detection',
   },
 }

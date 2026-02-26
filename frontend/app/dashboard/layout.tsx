@@ -74,7 +74,7 @@ export default function DashboardLayout({
               <Leaf className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-heading text-base font-bold text-foreground">
-              AgriVisionTalk
+              Agrovee
             </span>
           </div>
 
@@ -151,7 +151,7 @@ export default function DashboardLayout({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Leaf className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-heading text-base font-bold">AgriVisionTalk</span>
+              <span className="font-heading text-base font-bold">Agrovee</span>
             </div>
             <button onClick={() => setSidebarOpen(false)}>
               <X className="h-5 w-5 text-muted-foreground" />
@@ -201,7 +201,7 @@ export default function DashboardLayout({
           <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5 text-foreground" />
           </button>
-          <span className="flex-1 font-heading text-sm font-bold lg:hidden">AgriVisionTalk</span>
+          <span className="flex-1 font-heading text-sm font-bold lg:hidden">Agrovee</span>
           <span className="hidden flex-1 text-sm font-medium text-muted-foreground lg:block">
             {navItems.find((item) => item.href === pathname)?.label || "Dashboard"}
           </span>

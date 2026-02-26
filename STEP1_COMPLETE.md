@@ -143,7 +143,7 @@ make dev
 
 After running `init_db.py`:
 ```
-Email: admin@agrivision.com
+Email: admin@agrovee.com
 Password: admin123
 ```
 ⚠️ **CHANGE IN PRODUCTION!**

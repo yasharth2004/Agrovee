@@ -31,7 +31,7 @@ def init_db():
         db = SessionLocal()
         
         # Check if admin user exists
-        admin_email = "admin@agrivision.com"
+        admin_email = "admin@agrovee.com"
         existing_admin = db.query(User).filter(User.email == admin_email).first()
         
         if not existing_admin:
@@ -63,7 +63,7 @@ def init_db():
 
 if __name__ == "__main__":
     print("="*60)
-    print("AgriVisionTalk - Database Initialization")
+    print("Agrovee - Database Initialization")
     print("="*60)
     print(f"Database URL: {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else 'Local'}")
     print()

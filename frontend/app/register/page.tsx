@@ -72,7 +72,7 @@ export default function RegisterPage() {
               <Leaf className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="font-heading text-lg font-bold text-foreground">
-              AgriVisionTalk
+              Agrovee
             </span>
           </Link>
 

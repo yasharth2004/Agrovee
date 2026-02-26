@@ -1,1 +1,1 @@
-# Test suite for AgriVisionTalk API
+# Test suite for Agrovee API

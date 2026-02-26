@@ -64,7 +64,7 @@ export function DashboardPreview() {
               <div className="h-3 w-3 rounded-full bg-amber-400/70" />
               <div className="h-3 w-3 rounded-full bg-primary/70" />
               <span className="ml-4 text-xs text-muted-foreground">
-                AgriVisionTalk Dashboard
+                Agrovee Dashboard
               </span>
             </div>
 

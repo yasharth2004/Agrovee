@@ -3,4 +3,4 @@ Allow: /
 Disallow: /dashboard/
 Disallow: /api/
 
-Sitemap: https://agrivisiontalk.com/sitemap.xml
+Sitemap: https://agrovee.com/sitemap.xml

@@ -65,9 +65,9 @@ def client(db: Session) -> Generator[TestClient, None, None]:
 
 # --------------- User / auth helpers ---------------
 
-TEST_USER_EMAIL = "testuser@agrivision.com"
+TEST_USER_EMAIL = "testuser@agrovee.com"
 TEST_USER_PASSWORD = "TestPass123!"
-TEST_ADMIN_EMAIL = "admin@agrivision.com"
+TEST_ADMIN_EMAIL = "admin@agrovee.com"
 TEST_ADMIN_PASSWORD = "Admin123!!"
 
 

@@ -36,7 +36,7 @@ export function Footer() {
                 <Leaf className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="font-heading text-lg font-bold text-foreground">
-                AgriVisionTalk
+                Agrovee
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
@@ -70,7 +70,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-8 md:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} AgriVisionTalk. All rights
+            &copy; {new Date().getFullYear()} Agrovee. All rights
             reserved.
           </p>
           <div className="flex gap-6">
