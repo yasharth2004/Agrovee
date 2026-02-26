@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Leaf, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2 } from "lucide-react"
+import { Leaf, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2, Sun, Moon } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,6 +27,12 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1)
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -67,14 +74,29 @@ export default function RegisterPage() {
           transition={{ duration: 0.5 }}
           className="mx-auto w-full max-w-md"
         >
-          <Link href="/" className="mb-10 flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Leaf className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-heading text-lg font-bold text-foreground">
-              Agrovee
-            </span>
-          </Link>
+          <div className="mb-10 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+                <Leaf className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="font-heading text-lg font-bold text-foreground">
+                Agrovee
+              </span>
+            </Link>
+            {mounted && (
+              <button
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label="Toggle theme"
+              >
+                {resolvedTheme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </button>
+            )}
+          </div>
 
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
             Create your account
