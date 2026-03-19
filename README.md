@@ -53,6 +53,7 @@
 | 📊 **Dashboard** | Personalized dashboard with diagnosis history, statistics, recent activity, and quick-action cards |
 | 🌙 **Dark / Light Mode** | Full theme support via `next-themes` with smooth transitions across all pages |
 | 📱 **Responsive Design** | Mobile-first responsive layouts built with Tailwind CSS and shadcn/ui components |
+| 🌐 **Community Forum** | Farmer community platform for sharing knowledge—create posts with topic categorization (pest control, irrigation, soil health, weather, crop varieties, equipment), like/comment engagement, and **photo attachments** (up to 4 images per post with responsive gallery display) |
 | ⚡ **Turbopack Dev** | Next.js Turbopack for blazing-fast development hot-reload |
 | 🐳 **Docker Ready** | Dockerfile and docker-compose.yml for containerized deployment |
 
@@ -79,8 +80,7 @@
 │  │  API Layer (v1)                                 │ │
 │  │  ├── /auth     — Register, Login, Refresh, Me   │ │
 │  │  ├── /diagnosis — Upload, Diagnose, History     │ │
-│  │  ├── /chat     — Messages, Sessions             │ │
-│  │  └── /users    — Profile, Stats, Password       │ │
+│  │  ├── /chat     — Messages, Sessions             │ ││  │  ├── /community — Posts, Media Upload, Likes    │  ││  │  └── /users    — Profile, Stats, Password       │ │
 │  └───────────────────┬─────────────────────────────┘ │
 │                      │                               │
 │  ┌───────────────────▼─────────────────────────────┐ │
@@ -112,7 +112,8 @@
 │  │  Data Layer                                    │  │
 │  │  SQLite (agrovee.db) · SQLAlchemy ORM          │  │
 │  │  Tables: users, diagnoses, chat_sessions,      │  │
-│  │          chat_messages                          │  │
+│  │          chat_messages, community_posts,        │  │
+│  │          community_post_media                    │  │
 │  └────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────┘
                   │
@@ -423,6 +424,28 @@ All endpoints are prefixed with `/api/v1`. Protected endpoints require `Authoriz
 | `DELETE` | `/chat/sessions/{id}` | Yes | Delete a chat session |
 | `PUT` | `/chat/sessions/{id}/title` | Yes | Rename a chat session |
 
+### Community
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/community/posts` | No | List all community posts (paginated, filterable by category) |
+| `GET` | `/community/posts/{id}` | No | Get a specific post with full details and media |
+| `POST` | `/community/posts` | Yes | Create a new post (multipart form: `title`, `content`, `category`, `images?` up to 4 files) |
+| `PUT` | `/community/posts/{id}` | Yes | Update a post (only by creator) |
+| `DELETE` | `/community/posts/{id}` | Yes | Delete a post (only by creator) |
+| `POST` | `/community/posts/{id}/like` | Yes | Like a post (toggle) |
+| `POST` | `/community/posts/{id}/comment` | Yes | Add a comment to a post |
+| `GET` | `/community/posts/{id}/comments` | No | Get comments for a post |
+| `DELETE` | `/community/posts/{id}/comments/{comment_id}` | Yes | Delete own comment |
+
+**Post Categories:** `pest_control`, `irrigation`, `soil_health`, `weather`, `crop_varieties`, `equipment`, `general`
+
+**Media Upload Specs:**
+- Allowed formats: `jpg`, `jpeg`, `png`, `webp`, `gif`
+- Max file size: **10 MB per image**
+- Max files per post: **4 images**
+- Media served at: `/uploads/community/{filename}`
+
 ### Users
 
 | Method | Endpoint | Auth | Description |
@@ -503,6 +526,47 @@ curl -X POST http://localhost:8000/api/v1/diagnosis/diagnose \
 
 </details>
 
+### Example: Create Community Post with Media
+
+```bash
+# Create a post with attached images
+curl -X POST http://localhost:8000/api/v1/community/posts \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -F "title=Fall Armyworm Alert" \
+  -F "content=Spotted early signs of armyworm pressure along the maize perimeter. Sharing pheromone trap counts and effective control measures." \
+  -F "category=pest_control" \
+  -F "images=@/path/to/field_photo1.jpg" \
+  -F "images=@/path/to/field_photo2.jpg"
+```
+
+**Response:**
+```json
+{
+  "id": 42,
+  "title": "Fall Armyworm Alert",
+  "content": "Spotted early signs of armyworm pressure...",
+  "category": "pest_control",
+  "created_by_id": 1,
+  "created_by": "farmer_john",
+  "created_at": "2026-03-20T10:30:00Z",
+  "media": [
+    {
+      "id": 1,
+      "file_name": "field_photo1.jpg",
+      "file_url": "/uploads/community/demo-armyworm-field.jpg"
+    },
+    {
+      "id": 2,
+      "file_name": "field_photo2.jpg",
+      "file_url": "/uploads/community/backup-photo.jpg"
+    }
+  ],
+  "likes_count": 0,
+  "comments_count": 0,
+  "views": 5
+}
+```
+
 ---
 
 ## 📁 Project Structure
@@ -520,6 +584,7 @@ Agrovee/
 │   │   │       └── endpoints/
 │   │   │           ├── auth.py       # Register, login, refresh, logout
 │   │   │           ├── chat.py       # Chat message & session endpoints
+│   │   │           ├── community.py  # Posts with media, comments, likes
 │   │   │           ├── diagnosis.py  # Image upload & disease diagnosis
 │   │   │           └── users.py      # Profile, stats, password
 │   │   ├── core/
@@ -530,11 +595,13 @@ Agrovee/
 │   │   ├── models/                   # SQLAlchemy ORM models
 │   │   │   ├── user.py              # User table
 │   │   │   ├── diagnosis.py         # Diagnosis table
-│   │   │   └── chat.py              # ChatSession & ChatMessage tables
+│   │   │   ├── chat.py              # ChatSession & ChatMessage tables
+│   │   │   └── community.py         # CommunityPost & CommunityPostMedia
 │   │   ├── schemas/                  # Pydantic request/response schemas
 │   │   │   ├── user.py
 │   │   │   ├── diagnosis.py
-│   │   │   └── chat.py
+│   │   │   ├── chat.py
+│   │   │   └── community.py         # CommunityPostResponse, CommunityMediaResponse
 │   │   └── services/                 # AI service layer
 │   │       ├── vision_model.py       # ResNet50 / MobileNetV2 inference
 │   │       ├── weather_service.py    # OpenWeatherMap + Open-Meteo
@@ -550,8 +617,9 @@ Agrovee/
 │   │   ├── test_users.py
 │   │   └── services/                # AI service unit tests
 │   ├── scripts/
-│   │   └── init_db.py               # Database initialization + admin user
-│   ├── uploads/                      # Uploaded images directory
+│   │   ├── init_db.py               # Database initialization + admin user
+│   │   └── seed_demo_posts.py       # Seed community posts with sample media
+│   ├── uploads/                      # Uploaded media directory
 │   ├── agrovee.db                    # SQLite database file
 │   ├── requirements.txt             # Python dependencies
 │   ├── Dockerfile                   # Backend container image
