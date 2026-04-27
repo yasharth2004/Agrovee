@@ -16,13 +16,14 @@ import {
   Sun,
   Moon,
   Users,
+  ShieldAlert,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 import { useTheme } from "next-themes"
 import { useState } from "react"
 
-const navItems = [
+const baseNavItems = [
   {
     href: "/dashboard",
     label: "Dashboard",
@@ -55,6 +56,13 @@ const navItems = [
   },
 ]
 
+const adminNavItem = {
+  href: "/dashboard/admin",
+  label: "Admin",
+  subtitle: "Manage community & users",
+  icon: ShieldAlert,
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -66,6 +74,10 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  
+  // Build nav items based on user role
+  const navItems = user?.is_admin ? [...baseNavItems, adminNavItem] : baseNavItems
+  
   const currentNav = navItems.find((item) => item.href === pathname)
   const heroTitle = currentNav?.label || "Dashboard"
   const heroSubtitle = currentNav?.subtitle || "Stay on top of your farm's wellbeing"

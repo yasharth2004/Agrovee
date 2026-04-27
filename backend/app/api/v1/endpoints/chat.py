@@ -4,6 +4,7 @@ RAG chatbot conversations and messages
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List
@@ -82,7 +83,9 @@ async def send_message(
             context = message_data.context
         
         # Get RAG response
-        response = chatbot_service.chat(message_data.content, context)
+        # chatbot_service.chat performs blocking I/O/compute (Ollama + retrieval)
+        # so run it in a worker thread to avoid blocking the event loop.
+        response = await run_in_threadpool(chatbot_service.chat, message_data.content, context)
         
         assistant_response = response["answer"]
         sources = [source["id"] for source in response["sources"]]

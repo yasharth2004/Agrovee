@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi")
 
-# Optional env flag to disable heavy embedding stack (which depends on torch)
-DISABLE_TORCH = os.getenv("AGROVEE_DISABLE_TORCH", "0") == "1"
+# Optional env flag to disable heavy embedding stack (which depends on torch).
+# Default is disabled to keep chat responsive in local/dev environments.
+DISABLE_TORCH = os.getenv("AGROVEE_DISABLE_TORCH", "1") == "1"
 
 # Try to import AI dependencies when not explicitly disabled
 EMBEDDINGS_AVAILABLE = False
@@ -170,6 +171,11 @@ class RAGChatbotService:
             Response with answer, sources, and confidence
         """
         try:
+            # If Ollama was unavailable earlier (e.g., service started later),
+            # re-check before handling a new message.
+            if not self.ollama_available:
+                self._check_ollama()
+
             # Retrieve relevant documents
             retrieved_docs = self._retrieve(user_message, top_k=3)
             
@@ -281,6 +287,7 @@ class RAGChatbotService:
             try:
                 return self._call_ollama(user_message, context_text, extra_context)
             except Exception as e:
+                self.ollama_available = False
                 logger.error(f"Ollama generation failed, falling back to template: {e}")
 
         # Template-based fallback
@@ -346,6 +353,7 @@ Answer as a confident farming expert. Be specific and actionable. No source refe
         logger.info(f"Ollama response received ({len(answer)} chars)")
         return answer
 
+
     @staticmethod
     def _clean_response(text: str) -> str:
         """Strip off-topic content that phi sometimes appends."""
@@ -408,6 +416,7 @@ Answer as a confident farming expert. Be specific and actionable. No source refe
                     extra_context=""
                 )
             except Exception as e:
+                self.ollama_available = False
                 logger.error(f"Ollama fallback failed: {e}")
 
         return self._static_fallback_response()

@@ -79,6 +79,7 @@ export interface User {
   farm_size: string | null
   is_active: boolean
   is_verified: boolean
+  is_admin: boolean
   profile_picture_url: string | null
   created_at: string
   last_login: string | null
@@ -280,6 +281,94 @@ export const usersAPI = {
     api.post("/users/change-password", data),
   stats: () => api.get<UserStats>("/users/stats"),
   deleteAccount: () => api.delete("/users/account"),
+}
+
+// ---- Admin API ---- //
+
+export interface AdminStats {
+  total_users: number
+  active_users: number
+  total_posts: number
+  total_comments: number
+  posts_by_category: Array<{ category: string; count: number }>
+}
+
+export interface AdminPost {
+  id: string
+  title: string
+  content: string
+  category: string
+  views: number
+  likes_count: number
+  comments_count: number
+  user_id: number
+  user_email: string
+  user_name: string
+  created_at: string
+  updated_at: string
+  media_count: number
+}
+
+export interface AdminPostDetail extends AdminPost {
+  comments: Array<{ id: string; content: string; user_id: number; user_email: string; user_name: string; created_at: string }>
+  media: Array<{ id: string; file_name: string; file_url: string; mime_type: string; created_at: string }>
+}
+
+export interface AdminPostsResponse {
+  posts: AdminPost[]
+  total: number
+  page: number
+  per_page: number
+}
+
+export interface AdminUser {
+  id: number
+  email: string
+  full_name: string | null
+  is_active: boolean
+  is_admin: boolean
+  is_verified: boolean
+  created_at: string
+  last_login: string | null
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[]
+  total: number
+  page: number
+  per_page: number
+}
+
+export const adminAPI = {
+  stats: () => api.get<AdminStats>("/admin/stats"),
+  
+  // Community moderation
+  listPosts: (category = "all", search = "", skip = 0, limit = 20, sortBy = "recent") =>
+    api.get<AdminPostsResponse>("/admin/community/posts", {
+      params: { category, search, skip, limit, sort_by: sortBy },
+    }),
+  
+  getPostDetails: (postId: string) =>
+    api.get<AdminPostDetail>(`/admin/community/posts/${postId}`),
+  
+  deletePost: (postId: string, reason = "") =>
+    api.delete(`/admin/community/posts/${postId}`, {
+      params: { reason },
+    }),
+  
+  deleteComment: (commentId: string, reason = "") =>
+    api.delete(`/admin/community/comments/${commentId}`, {
+      params: { reason },
+    }),
+  
+  // User management
+  listUsers: (skip = 0, limit = 20, search = "") =>
+    api.get<AdminUsersResponse>("/admin/users", {
+      params: { skip, limit, search },
+    }),
+  
+  toggleUserActive: (userId: number) =>
+    api.patch(`/admin/users/${userId}/toggle-active`),
 }
 
 export default api

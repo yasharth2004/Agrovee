@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     MODEL_PATH: str = "../p1/models/best_model.pth"
     MODEL_METADATA_PATH: str = "../p1/models/metadata.json"
     DEVICE: str = "cuda"  # or "cpu"
+    ALLOW_DEMO_DIAGNOSIS: bool = False
     
     # Weather API (OpenWeatherMap)
     WEATHER_API_KEY: str = "fa64060dde08540c194cff5e6c86fd5f"

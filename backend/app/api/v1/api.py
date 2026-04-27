@@ -5,7 +5,7 @@ Combines all endpoint routers
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, users, diagnosis, chat, community
+from app.api.v1.endpoints import auth, users, diagnosis, chat, community, admin
 
 api_router = APIRouter()
 
@@ -42,4 +42,11 @@ api_router.include_router(
     community.router,
     prefix="/community",
     tags=["Community"]
+)
+
+# Admin routes
+api_router.include_router(
+    admin.router,
+    prefix="/admin",
+    tags=["Admin"]
 )

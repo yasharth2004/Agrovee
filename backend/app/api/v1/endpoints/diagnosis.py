@@ -243,6 +243,12 @@ async def process_diagnosis(diagnosis_id: int, location: Optional[str], db: Sess
         # Step 1: Vision model inference
         vision_service = get_vision_service()
         vision_result = vision_service.predict(diagnosis.image_path, diagnosis.image_filename or "")
+
+        if vision_result.get("demo_mode"):
+            raise RuntimeError(
+                "Diagnosis is running in demo mode, not with trained model weights. "
+                "Install model dependencies and provide the real checkpoint before diagnosing."
+            )
         
         logger.info(f"Vision prediction: {vision_result['predicted_disease']} ({vision_result['confidence']:.1f}%)")
         
@@ -284,6 +290,7 @@ async def process_diagnosis(diagnosis_id: int, location: Optional[str], db: Sess
         diagnosis.predicted_disease = enhanced_prediction["predicted_disease"]
         diagnosis.confidence_score = enhanced_prediction["confidence"]
         diagnosis.fusion_confidence = enhanced_prediction["fusion_confidence"]
+        diagnosis.model_version = vision_result.get("model_version")
         diagnosis.all_predictions = vision_result["top_predictions"]
         diagnosis.crop_type = enhanced_prediction["crop_type"]
         diagnosis.weather_data = weather_data["raw"] if weather_data else None
@@ -302,5 +309,6 @@ async def process_diagnosis(diagnosis_id: int, location: Optional[str], db: Sess
         diagnosis = db.query(Diagnosis).filter(Diagnosis.id == diagnosis_id).first()
         if diagnosis:
             diagnosis.status = DiagnosisStatus.FAILED
+            diagnosis.error_message = str(e)
             db.commit()
         raise

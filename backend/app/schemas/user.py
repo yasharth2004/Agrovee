@@ -86,6 +86,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     is_verified: bool
+    is_admin: bool
     profile_picture_url: Optional[str]
     created_at: datetime
     diagnosis_count: int = 0

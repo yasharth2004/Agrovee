@@ -45,13 +45,15 @@ class VisionModelService:
         self.device = None
         self.transform = None
         self.metadata = {}
+        self.demo_mode = False
+        self.demo_reason = ""
         self._load_model()
     
     def _load_model(self):
         """Load trained model and metadata"""
         if not TORCH_AVAILABLE:
             logger.warning("⚠️ PyTorch not available - running in DEMO mode")
-            self._init_demo_mode()
+            self._init_demo_mode("PyTorch is not available in this environment")
             return
             
         try:
@@ -91,6 +93,8 @@ class VisionModelService:
                 self.model.load_state_dict(checkpoint['model_state_dict'])
                 self.model.to(self.device)
                 self.model.eval()
+                self.demo_mode = False
+                self.demo_reason = ""
                 logger.info(f"✓ Model loaded successfully from {model_path}")
             else:
                 logger.warning(f"Model file not found at {model_path}")
@@ -108,14 +112,16 @@ class VisionModelService:
             
         except Exception as e:
             logger.error(f"Error loading model: {e}")
-            self._init_demo_mode()
+            self._init_demo_mode(str(e))
     
-    def _init_demo_mode(self):
+    def _init_demo_mode(self, reason: str = ""):
         """
         Initialize demo mode.
         If PyTorch is available, loads a pre-trained MobileNetV2 (ImageNet)
         for real crop identification. Otherwise falls back to heuristics.
         """
+        self.demo_mode = True
+        self.demo_reason = reason or "Trained model unavailable"
         self.device = "cpu"
         self.num_classes = 38
         self.class_names = [
@@ -204,6 +210,12 @@ class VisionModelService:
         Returns:
             Dictionary with predictions, confidence, and top-5 results
         """
+        if self.demo_mode and not settings.ALLOW_DEMO_DIAGNOSIS:
+            raise RuntimeError(
+                f"Vision model is not running with trained weights. {self.demo_reason}. "
+                "Set ALLOW_DEMO_DIAGNOSIS=true only if you explicitly want demo predictions."
+            )
+
         if not TORCH_AVAILABLE or self.model is None:
             return self._demo_predict(image_path, original_filename)
             
