@@ -5,8 +5,7 @@ import { CommunityHeader } from "@/components/community/community-header"
 import { CategoryFilter, type CommunityCategoryId } from "@/components/community/category-filter"
 import { PostList } from "@/components/community/post-list"
 import { CreatePostModal } from "@/components/community/create-post-modal"
-import type { CommunityPost } from "@/components/community/post-card"
-import { communityAPI } from "@/lib/api"
+import { communityAPI, type CommunityPost } from "@/lib/api"
 
 export default function CommunityPage() {
   const [selectedCategory, setSelectedCategory] = useState<CommunityCategoryId>("all")

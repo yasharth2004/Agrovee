@@ -21,6 +21,7 @@ bcrypt==4.1.2
 python-dotenv==1.0.1
 requests==2.31.0
 httpx==0.26.0
+google-generativeai>=0.3.0
 
 # Testing
 pytest==7.4.4

@@ -47,6 +47,9 @@ class VisionModelService:
         self.metadata = {}
         self.demo_mode = False
         self.demo_reason = ""
+        self._crop_classifier = None
+        self._crop_transform = None
+        self._imagenet_categories = []
         self._load_model()
     
     def _load_model(self):
@@ -259,7 +262,9 @@ class VisionModelService:
             
         except Exception as e:
             logger.error(f"Prediction error: {e}")
-            return self._demo_predict(image_path)
+            if self.demo_mode and settings.ALLOW_DEMO_DIAGNOSIS:
+                return self._demo_predict(image_path, original_filename)
+            raise
     
     def _classify_crop_with_model(self, image_path: str) -> Optional[str]:
         """

@@ -59,13 +59,20 @@ class Settings(BaseSettings):
     ALLOW_DEMO_DIAGNOSIS: bool = False
     
     # Weather API (OpenWeatherMap)
-    WEATHER_API_KEY: str = "fa64060dde08540c194cff5e6c86fd5f"
+    WEATHER_API_KEY: Optional[str] = None
     WEATHER_API_URL: str = "https://api.openweathermap.org/data/2.5"
     
     # HuggingFace (for RAG chatbot)
     HUGGINGFACE_API_KEY: Optional[str] = None
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     LLM_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"
+    
+    # RAG Configuration
+    AGROVEE_DISABLE_TORCH: str = "0"  # Set to "1" to disable embeddings (fallback mode)
+    
+    # Google Gemini API (for RAG chatbot text generation)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     
     # FAISS Vector DB
     FAISS_INDEX_PATH: str = "./data/faiss_index"

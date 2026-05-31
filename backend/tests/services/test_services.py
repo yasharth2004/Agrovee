@@ -314,3 +314,39 @@ class TestRAGChatbotService:
         assert isinstance(results, list)
         # At least some results should be returned for known KB topics
         assert len(results) >= 0  # may be 0 if no KB match, that's OK
+
+    def test_keyword_search_prefers_exact_pesticide_topic(self):
+        """Exact user topic should outrank loose organic-treatment matches."""
+        from app.services import get_chatbot_service
+
+        service = get_chatbot_service()
+        results = service._keyword_search("Best organic pesticides for small farms", top_k=3)
+        assert results[0]["id"] == "kb_010"
+
+    def test_keyword_search_prefers_rice_fungal_topic(self):
+        """Rice fungal queries should retrieve rice disease prevention context."""
+        from app.services import get_chatbot_service
+
+        service = get_chatbot_service()
+        results = service._keyword_search("How to prevent fungal diseases in rice?", top_k=3)
+        assert results[0]["id"] == "kb_009"
+
+    def test_diagnosis_followup_cause_and_treatment_are_distinct(self):
+        """Diagnosis context should not flatten different follow-up intents."""
+        from app.services import get_chatbot_service
+
+        service = get_chatbot_service()
+        context = {
+            "crop": "Strawberry",
+            "disease": "Strawberry___Leaf_scorch",
+            "risk": "CRITICAL",
+        }
+
+        cause_query = service._build_retrieval_query("What caused this disease?", context)
+        treatment_query = service._build_retrieval_query("How do I treat this?", context)
+
+        cause_results = service._keyword_search(cause_query, top_k=3)
+        treatment_results = service._keyword_search(treatment_query, top_k=3)
+
+        assert cause_results[0]["id"] == "kb_013"
+        assert treatment_results[0]["id"] == "kb_012"

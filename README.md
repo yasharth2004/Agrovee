@@ -42,7 +42,7 @@
 | 🔬 **Crop Disease Detection** | Upload a leaf/plant image → ResNet50 deep learning model identifies crop type and disease across **38 classes** with confidence scores and top-5 predictions |
 | 🌤️ **Weather-Aware Multimodal Fusion** | Combines computer vision predictions with **real-time weather data** (temperature, humidity, rainfall) and user-provided soil/season info for enhanced, context-aware accuracy |
 | 💊 **Treatment Recommendations** | AI decision engine generates disease-specific treatment plans including chemical & organic options, fertilizer guidance (NPK ratios), irrigation schedules, cost estimates, and monitoring plans |
-| 💬 **RAG Chatbot** | Retrieval-Augmented Generation chatbot powered by **Ollama (phi model)** with FAISS/keyword retrieval over an agricultural knowledge base — answers farming questions with cited sources |
+| 💬 **RAG Chatbot** | Retrieval-Augmented Generation chatbot powered by **Google Gemini 2.5 Flash API** with FAISS/keyword retrieval over an agricultural knowledge base — answers farming questions with cited sources |
 | 🎙️ **Voice Chat** | Google Assistant–style full-screen voice overlay using the Web Speech API — speak questions, hear AI responses via text-to-speech, all hands-free |
 
 ### Platform Features
@@ -104,7 +104,7 @@
 │  │                                                │ │
 │  │  ┌───────────────────────────────────────────┐ │ │
 │  │  │ 5. RAG Chatbot                            │ │ │
-│  │  │  Ollama phi (3B) · FAISS · Keyword Search │ │ │
+│  │  │  Gemini 2.5 Flash API · FAISS · Keyword Search │ │ │
 │  │  └───────────────────────────────────────────┘ │ │
 │  └────────────────────────────────────────────────┘ │
 │                                                      │
@@ -122,7 +122,7 @@
 │  External Services                   │
 │  ├── OpenWeatherMap API (weather)    │
 │  ├── Open-Meteo API (fallback)       │
-│  └── Ollama (localhost:11434, phi)   │
+│  └── Google Gemini API (Cloud)       │
 └──────────────────────────────────────┘
 ```
 
@@ -198,7 +198,7 @@ User uploads image + (optional: soil_type, location, season)
 
 | Attribute | Value |
 |-----------|-------|
-| **LLM** | Ollama phi (phi2 family, 3B parameters, Q4_0 quantization) |
+| **LLM** | Google Gemini 2.5 Flash (API-based, no local setup required) |
 | **Retrieval** | FAISS vector search + keyword fallback |
 | **Embeddings** | `all-MiniLM-L6-v2` (sentence-transformers) |
 | **Knowledge Base** | 8 agricultural topics (expandable) |
@@ -252,7 +252,7 @@ User uploads image + (optional: soil_type, location, season)
 
 | Service | Purpose |
 |---------|---------|
-| Ollama | Local LLM runtime (phi model, localhost:11434) |
+| Google Gemini API | Cloud-based LLM (requires GEMINI_API_KEY) |
 | OpenWeatherMap API | Real-time weather data |
 | Open-Meteo API | Free weather fallback (no API key) |
 | Docker + docker-compose | Containerized deployment |
@@ -269,7 +269,7 @@ User uploads image + (optional: soil_type, location, season)
 | Node.js | 18+ | Frontend runtime |
 | npm | 9+ | Package manager |
 | Git | Any | Version control |
-| Ollama | Latest | Required for RAG chatbot |
+| Google Generative AI SDK | >=0.3.0 | Required for RAG chatbot (pip install google-generativeai) |
 
 ### Step 1 — Clone the Repository
 
@@ -336,20 +336,32 @@ npm run dev
 
 Frontend is now live at **http://localhost:3000**
 
-### Step 5 — Ollama Setup (for RAG Chatbot)
+### Step 5 — Google Gemini Setup (for RAG Chatbot)
 
-```bash
-# Install Ollama (macOS)
-brew install ollama
+To enable the RAG chatbot with text generation, you need a Google Gemini API key:
 
-# Start Ollama server
-ollama serve
+1. **Get a Gemini API Key:**
+   - Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Sign in with your Google account
+   - Create a new API key
+   - Copy the key
 
-# Pull the phi model (in another terminal)
-ollama pull phi
-```
+2. **Add to Environment:**
+   ```bash
+   export GEMINI_API_KEY="your-api-key-here"
+   ```
+   Or add to your `.env` file in the `backend/` directory:
+   ```
+   GEMINI_API_KEY=your-api-key-here
+   GEMINI_MODEL=gemini-2.5-flash
+   ```
 
-Ollama runs at **http://localhost:11434**. The chatbot works without Ollama but falls back to the knowledge base only.
+3. **Restart the backend:**
+   ```bash
+   cd backend && ./start.sh
+   ```
+
+The chatbot works without Gemini API but falls back to template-based responses (knowledge base only).
 
 ### Step 6 — Login
 
@@ -376,6 +388,8 @@ Password: admin123
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `10080` | Access token TTL (7 days) |
 | `DATABASE_URL` | No | `sqlite:///./agrovee.db` | Database connection string |
 | `WEATHER_API_KEY` | **Yes** | — | OpenWeatherMap API key ([get free key](https://openweathermap.org/api)) |
+| `GEMINI_API_KEY` | **Yes** | — | Google Gemini API key ([get free key](https://aistudio.google.com/app/apikey)) |
+| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Google Gemini model to use |
 | `MODEL_PATH` | No | `../best_model.pth` | Path to trained ResNet50 model |
 | `DEVICE` | No | `cpu` | Inference device (`cpu`, `cuda`, `mps`) |
 | `UPLOAD_DIR` | No | `./uploads` | Image upload directory |

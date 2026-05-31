@@ -35,6 +35,9 @@ faiss-cpu==1.7.4
 langchain==0.1.6
 langchain-community==0.0.19
 
+# Google Generative AI (Gemini API)
+google-generativeai>=0.3.0
+
 # Weather API
 requests==2.31.0
 httpx==0.26.0

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Mic, Volume2, VolumeX, Bot } from "lucide-react"
+import { MarkdownRenderer } from "./markdown-renderer"
 
 interface VoiceChatOverlayProps {
   open: boolean
@@ -125,6 +126,20 @@ export function VoiceChatOverlay({ open, onClose, onSend, loading }: VoiceChatOv
     recognitionRef.current?.stop()
   }, [])
 
+  const stripMarkdown = (text: string): string => {
+    // Remove markdown formatting and keep plain text
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Bold
+      .replace(/\*(.*?)\*/g, "$1") // Italic
+      .replace(/__(.*?)__/g, "$1") // Bold alt
+      .replace(/_(.+?)_/g, "$1") // Italic alt
+      .replace(/~~(.*?)~~/g, "$1") // Strikethrough
+      .replace(/\[(.*?)\]\((.*?)\)/g, "$1") // Links
+      .replace(/#{1,6}\s+/g, "") // Headings
+      .replace(/`+/g, "") // Code/backticks
+      .replace(/[-*+]\s+/g, "• ") // List items
+  }
+
   const speak = useCallback((text: string) => {
     if (!synthRef.current || !ttsEnabled) {
       setVoiceState("idle")
@@ -132,7 +147,10 @@ export function VoiceChatOverlay({ open, onClose, onSend, loading }: VoiceChatOv
     }
     synthRef.current.cancel()
 
-    const utterance = new SpeechSynthesisUtterance(text)
+    // Strip markdown for TTS
+    const plainText = stripMarkdown(text)
+
+    const utterance = new SpeechSynthesisUtterance(plainText)
     utterance.lang = "en-US"
     utterance.rate = 1.0
     utterance.pitch = 1.0
@@ -273,7 +291,9 @@ export function VoiceChatOverlay({ open, onClose, onSend, loading }: VoiceChatOv
                     <p className="mb-3 text-sm text-white/40">&quot;{transcript}&quot;</p>
                   )}
                   <div className="rounded-2xl bg-white/10 px-5 py-4 backdrop-blur-md">
-                    <p className="text-left text-sm leading-relaxed text-white/90">{response}</p>
+                    <div className="text-left text-sm leading-relaxed text-white/90">
+                      <MarkdownRenderer content={response} className="text-white/90 [&>p]:text-white/90 [&>ul]:text-white/90 [&>ol]:text-white/90" />
+                    </div>
                   </div>
                   {voiceState === "idle" && (
                     <p className="mt-3 text-xs text-white/30">Tap mic to ask another question</p>

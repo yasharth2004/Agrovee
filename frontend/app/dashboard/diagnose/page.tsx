@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select"
 import { diagnosisAPI, chatAPI, type DiagnosisResponse } from "@/lib/api"
 import { VoiceChatOverlay } from "@/components/voice-chat-overlay"
+import { MarkdownRenderer } from "@/components/markdown-renderer"
 
 /** Format disease names: "Apple___Apple_Scab" → "Apple Scab" */
 function formatDisease(name: string | null | undefined): string {
@@ -749,7 +750,11 @@ export default function DiagnosePage() {
                                   : "bg-muted text-foreground"
                               }`}
                             >
-                              {msg.content}
+                              {msg.role === "user" ? (
+                                msg.content
+                              ) : (
+                                <MarkdownRenderer content={msg.content} className="text-sm" />
+                              )}
                             </div>
                             {msg.role === "user" && (
                               <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-muted">

@@ -21,7 +21,7 @@ class UserBase(BaseModel):
 # User Registration
 class UserRegister(UserBase):
     """User registration request"""
-    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    password: str = Field(..., min_length=8, max_length=72, description="Password must be 8-72 characters (bcrypt limit)")
     confirm_password: str
 
 
@@ -29,7 +29,7 @@ class UserRegister(UserBase):
 class UserLogin(BaseModel):
     """User login request"""
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=72, description="Password must be 72 characters or less")
 
 
 # Token Response
@@ -60,8 +60,8 @@ class UserUpdate(BaseModel):
 # Password Change
 class PasswordChange(BaseModel):
     """Password change request"""
-    old_password: str
-    new_password: str = Field(..., min_length=8)
+    old_password: str = Field(..., max_length=72)
+    new_password: str = Field(..., min_length=8, max_length=72)
     confirm_password: str
 
 
@@ -74,7 +74,7 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     """Confirm password reset with token"""
     token: str
-    new_password: str = Field(..., min_length=8)
+    new_password: str = Field(..., min_length=8, max_length=72)
     confirm_password: str
 
 
