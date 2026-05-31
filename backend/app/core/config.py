@@ -6,6 +6,7 @@ Centralized settings management using Pydantic
 from typing import List, Optional
 from functools import lru_cache
 import json
+import os
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -51,7 +52,7 @@ class Settings(BaseSettings):
     PWD_DEPRECATED_SCHEMES: str = "auto"
     
     # File Upload
-    UPLOAD_DIR: str = "./uploads"
+    UPLOAD_DIR: str = "/tmp/uploads" if os.getenv("VERCEL") else "./uploads"
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/jpg"]
     

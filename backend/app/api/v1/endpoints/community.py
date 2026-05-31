@@ -43,7 +43,6 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 router = APIRouter()
 MEDIA_ROOT = Path(settings.UPLOAD_DIR) / "community"
-MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def _build_media_payload(media_items: List[CommunityPostMedia]) -> List[CommunityMediaResponse]:
@@ -112,6 +111,7 @@ async def _save_post_media(
 
         file_extension = Path(upload.filename).suffix or ".jpg"
         safe_name = f"{uuid.uuid4().hex}{file_extension}"
+        MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
         destination = MEDIA_ROOT / safe_name
 
         with open(destination, "wb") as buffer:
