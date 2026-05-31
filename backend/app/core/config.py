@@ -3,9 +3,12 @@ Application Configuration
 Centralized settings management using Pydantic
 """
 
-from pydantic_settings import BaseSettings
 from typing import List, Optional
 from functools import lru_cache
+import json
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -88,6 +91,25 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "./logs/app.log"
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug(cls, value):
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "production", "prod"}:
+                return False
+        return value
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if value.startswith("["):
+                return json.loads(value)
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
     
     class Config:
         env_file = ".env"
